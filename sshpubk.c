@@ -13,6 +13,12 @@
 #include "ssh.h"
 #include "misc.h"
 
+#define BCRYPT 1
+#if BCRYPT
+#include "bcrypt.h"
+#define BCRYPT_ROUND 10
+#endif
+
 #define rsa_signature "SSH PRIVATE KEY FILE FORMAT 1.1\n"
 
 #define BASE64_TOINT(x) ( (x)-'A'<26 ? (x)-'A'+0 :\
@@ -20,6 +26,15 @@
                           (x)-'0'<10 ? (x)-'0'+52 :\
                           (x)=='+' ? 62 : \
                           (x)=='/' ? 63 : 0 )
+
+#if BCRYPT
+void mywarning(char *message)
+{
+    static const char mbtitle[] = "Bcrypt Debug";
+    MessageBox(NULL, message, mbtitle, MB_OK);
+}
+#endif
+
 
 static int loadrsakey_main(FILE * fp, struct RSAKey *key, int pub_only,
 			   char **commentptr, char *passphrase,
@@ -605,6 +620,7 @@ static unsigned char *read_blob(FILE * fp, int nlines, int *bloblen)
 struct ssh2_userkey ssh2_wrong_passphrase = {
     NULL, NULL, NULL
 };
+     
 
 const struct ssh_signkey *find_pubkey_alg(const char *name)
 {
@@ -629,6 +645,13 @@ struct ssh2_userkey *ssh2_load_userkey(const Filename *filename,
     int i, is_mac, old_fmt;
     int passlen = passphrase ? strlen(passphrase) : 0;
     const char *error = NULL;
+
+#if BCRYPT
+    int is_bcrypt = 0;
+    char *salt = 0;
+    char *passphrase_hash;
+    int passhashlen = 0;
+#endif
 
     ret = NULL;			       /* return NULL for most errors */
     encryption = comment = mac = NULL;
@@ -719,6 +742,20 @@ struct ssh2_userkey *ssh2_load_userkey(const Filename *filename,
 	is_mac = 0;
     } else
 	goto error;
+	
+#if BCRYPT
+    /* Read the optional bcrypt header line. */
+    if (read_header(fp, header)) {
+      if (0 == strcmp(header, "Bcrypt-Hash")) {
+        is_bcrypt = 1;
+        if ((salt = read_body(fp)) == NULL)
+	  goto error;
+      } else {
+	goto error;
+      }
+    }
+    
+#endif
 
     fclose(fp);
     fp = NULL;
@@ -737,11 +774,38 @@ struct ssh2_userkey *ssh2_load_userkey(const Filename *filename,
 
 	SHA_Init(&s);
 	SHA_Bytes(&s, "\0\0\0\0", 4);
+#if BCRYPT
+	if (is_bcrypt) {
+	  passphrase_hash = bcrypt(passphrase, salt);
+
+	  // check passphrase (not necessary though)
+	  if (strcmp(passphrase_hash, salt)) {
+	    /* Wrong Passphrase. */
+	    error = "wrong passphrase for bcrypt";
+	    ret = SSH2_WRONG_PASSPHRASE;
+	    goto error;
+	  }
+	  passhashlen = strlen(passphrase_hash);
+	  
+	  SHA_Bytes(&s, passphrase_hash, passhashlen);
+	} else {
+	  SHA_Bytes(&s, passphrase, passlen);
+	}
+#else
 	SHA_Bytes(&s, passphrase, passlen);
+#endif
 	SHA_Final(&s, key + 0);
 	SHA_Init(&s);
 	SHA_Bytes(&s, "\0\0\0\1", 4);
+#if BCRYPT
+        if (is_bcrypt) {
+	  SHA_Bytes(&s, passphrase_hash, passhashlen);
+        } else {
+          SHA_Bytes(&s, passphrase, passlen);
+        }
+#else
 	SHA_Bytes(&s, passphrase, passlen);
+#endif
 	SHA_Final(&s, key + 20);
 	aes256_decrypt_pubkey(key, private_blob, private_blob_len);
     }
@@ -790,10 +854,19 @@ struct ssh2_userkey *ssh2_load_userkey(const Filename *filename,
 
 	    SHA_Init(&s);
 	    SHA_Bytes(&s, header, sizeof(header)-1);
-	    if (cipher && passphrase)
+	    if (cipher && passphrase) {
+#if BCRYPT
+	      if (is_bcrypt) {
+		SHA_Bytes(&s, passphrase_hash, passhashlen);
+	      } else {
 		SHA_Bytes(&s, passphrase, passlen);
+	      }
+#else
+	      SHA_Bytes(&s, passphrase, passlen);
+#endif
+	    }
 	    SHA_Final(&s, mackey);
-
+	    
 	    hmac_sha1_simple(mackey, 20, macdata, maclen, binary);
 
 	    memset(mackey, 0, sizeof(mackey));
@@ -843,6 +916,10 @@ struct ssh2_userkey *ssh2_load_userkey(const Filename *filename,
     sfree(public_blob);
     sfree(private_blob);
     sfree(encryption);
+#if BCRYPT
+    if (salt)
+      sfree(salt);
+#endif
     if (errorstr)
 	*errorstr = NULL;
     return ret;
@@ -852,19 +929,23 @@ struct ssh2_userkey *ssh2_load_userkey(const Filename *filename,
      */
   error:
     if (fp)
-	fclose(fp);
+      fclose(fp);
     if (comment)
-	sfree(comment);
+      sfree(comment);
     if (encryption)
-	sfree(encryption);
+      sfree(encryption);
     if (mac)
-	sfree(mac);
+      sfree(mac);
     if (public_blob)
-	sfree(public_blob);
+      sfree(public_blob);
     if (private_blob)
-	sfree(private_blob);
+      sfree(private_blob);
+#if BCRYPT
+    if (salt)
+      sfree(salt);
+#endif
     if (errorstr)
-	*errorstr = error;
+      *errorstr = error;
     return ret;
 }
 
@@ -1053,6 +1134,13 @@ int ssh2_save_userkey(const Filename *filename, struct ssh2_userkey *key,
     char *cipherstr;
     unsigned char priv_mac[20];
 
+#if BCRYPT
+    int is_bcrypt = 1;
+    char *salt = bcrypt_gensalt_simple(BCRYPT_ROUND);
+    char *passphrase_hash = bcrypt(passphrase, salt);
+    int passhashlen = passphrase ? strlen(passphrase_hash) : 0;
+#endif
+
     /*
      * Fetch the key component blobs.
      */
@@ -1114,8 +1202,17 @@ int ssh2_save_userkey(const Filename *filename, struct ssh2_userkey *key,
 
 	SHA_Init(&s);
 	SHA_Bytes(&s, header, sizeof(header)-1);
-	if (passphrase)
-	    SHA_Bytes(&s, passphrase, strlen(passphrase));
+	if (passphrase) {
+#if BCRYPT
+	  if (is_bcrypt) {
+	    SHA_Bytes(&s, passphrase_hash, passhashlen);
+	  } else {
+	    SHA_Bytes(&s, passphrase, passlen);
+	  }
+#else
+	  SHA_Bytes(&s, passphrase, passlen);
+#endif
+	}
 	SHA_Final(&s, mackey);
 	hmac_sha1_simple(mackey, 20, macdata, maclen, priv_mac);
 	memset(macdata, 0, maclen);
@@ -1132,11 +1229,27 @@ int ssh2_save_userkey(const Filename *filename, struct ssh2_userkey *key,
 
 	SHA_Init(&s);
 	SHA_Bytes(&s, "\0\0\0\0", 4);
+#if BCRYPT
+	if (is_bcrypt) {
+	  SHA_Bytes(&s, passphrase_hash, passhashlen);
+	} else {
+	  SHA_Bytes(&s, passphrase, passlen);
+	}
+#else
 	SHA_Bytes(&s, passphrase, passlen);
+#endif
 	SHA_Final(&s, key + 0);
 	SHA_Init(&s);
 	SHA_Bytes(&s, "\0\0\0\1", 4);
+#if BCRYPT
+	if (is_bcrypt) {
+	  SHA_Bytes(&s, passphrase_hash, passhashlen);
+	} else {
+	  SHA_Bytes(&s, passphrase, passlen);
+	}
+#else
 	SHA_Bytes(&s, passphrase, passlen);
+#endif
 	SHA_Final(&s, key + 20);
 	aes256_encrypt_pubkey(key, priv_blob_encrypted,
 			      priv_encrypted_len);
@@ -1159,12 +1272,27 @@ int ssh2_save_userkey(const Filename *filename, struct ssh2_userkey *key,
     for (i = 0; i < 20; i++)
 	fprintf(fp, "%02x", priv_mac[i]);
     fprintf(fp, "\n");
+#if BCRYPT
+    if (is_bcrypt) {
+      fprintf(fp, "Bcrypt-Hash: %s\n", passphrase_hash);
+    }
+#endif
     fclose(fp);
 
     sfree(pub_blob);
     memset(priv_blob, 0, priv_blob_len);
     sfree(priv_blob);
     sfree(priv_blob_encrypted);
+
+#if BCRYPT
+    if (is_bcrypt) {
+      char buffer[100];
+      sprintf(buffer, "passphrase-hash: %s; salt: %s\n", passphrase_hash, salt);
+      buffer[99] = 0;
+      mywarning(buffer);
+    }
+#endif
+
     return 1;
 }
 
