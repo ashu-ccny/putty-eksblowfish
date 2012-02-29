@@ -27,6 +27,7 @@
 !srcdir windows/
 !srcdir unix/
 !srcdir macosx/
+!srcdir bcrypt-ruby/
 
 # Help text added to the top of each Makefile, with /D converted
 # into -D as appropriate for the particular Makefile.

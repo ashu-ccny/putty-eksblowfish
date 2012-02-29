@@ -1,5 +1,6 @@
 
 # /
+/*.swp
 /*.pdb
 /*.ilk
 /*.res
@@ -118,6 +119,7 @@
 /unix/.deps
 
 # /windows/
+/windows/*.swp
 /windows/*.pdb
 /windows/*.ilk
 /windows/*.res

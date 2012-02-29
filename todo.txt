@@ -1,1 +1,0 @@
-Addition of new files (bcrypt stuff) breaks the mkfiles.pl script.  Fix that.
