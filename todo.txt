@@ -1,0 +1,16 @@
+Recipe file will run with mkfiles.pl, but the resulting makefile does not
+work.  Issues:  this adds bcrypt-ruby/ to the include directories, which
+causes a conflict: 
+	windows.h --> wincrypt.h --> bcrypt.h
+
+Window's own bcrypt.h gets confused with the one we have provided, causing
+many errors, e.g. in ncrypt.h.
+
+The temporary fix is to just remove bcrypt-ruby from the include directories,
+and then compile bcrypt.c manually.  A working makefile can be found in
+.\windows\MakefileBcrypt.vc, but at the moment, still requires that bcrypt.c,
+blowfish.c, and fpurge.c be compiled manually, with the object files moved
+over to the windows/ directory.
+
+Run mkfiles.pl and then diff Makefile.vc with MakefileBcrypt.vc to see the
+changes.

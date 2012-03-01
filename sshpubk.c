@@ -15,7 +15,7 @@
 
 #define BCRYPT 1
 #if BCRYPT
-#include "bcrypt.h"
+#include "./bcrypt-ruby/bcrypt.h"
 #define BCRYPT_ROUND 10
 #endif
 

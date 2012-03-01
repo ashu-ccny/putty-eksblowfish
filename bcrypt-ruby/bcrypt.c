@@ -67,6 +67,10 @@
 #include "bcrypt.h"
 #include "fpurge.h"
 
+// MS thought it would be cute to rename some standard
+// library functions with an underscore 8D  To fix:
+#define snprintf _snprintf
+
 /* This implementation is adaptable to current computing power.
  * You can have up to 2^31 rounds which should be enough for some
  * time to come.
@@ -177,7 +181,8 @@ char *
 bcrypt_gensalt_simple(u_int8_t log_rounds)
 {
 	int SEED_LENGTH = 6;
-	u_int8_t    rseed[SEED_LENGTH + 1];
+	//u_int8_t    rseed[SEED_LENGTH + 1];
+	u_int8_t    rseed[7];
 
   int i;
   for (i=0; i<SEED_LENGTH; i++) {

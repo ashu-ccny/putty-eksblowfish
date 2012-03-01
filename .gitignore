@@ -153,3 +153,7 @@
 /windows/.bmake
 /windows/*.sln
 /windows/*.suo
+
+# /bcrypt-ruby/
+/bcrypt-ruby/*.obj
+/bcrypt-ruby/*.swp
