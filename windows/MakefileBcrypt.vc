@@ -105,7 +105,7 @@
 
 # If you rename this file to `Makefile', you should change this line,
 # so that the .rsp files still depend on the correct makefile.
-MAKEFILE = Makefile.vc
+MAKEFILE = MakefileBcrypt.vc
 
 # C compilation flags
 CFLAGS = /nologo /W3 /O1 -I..\./ -I..\charset/ -I..\windows/ -I..\unix/ -I..\macosx/ /D_WINDOWS /D_WIN32_WINDOWS=0x500 /DWINVER=0x500
@@ -137,7 +137,7 @@ plink.exe: be_all_s.obj cmdline.obj conf.obj cproxy.obj ldisc.obj \
 		windefs.obj wingss.obj winhandl.obj winmisc.obj winnet.obj \
 		winnoise.obj winnojmp.obj winpgntc.obj winplink.obj \
 		winproxy.obj winser.obj winstore.obj wintime.obj winx11.obj \
-		x11fwd.obj plink.rsp
+		x11fwd.obj plink.rsp bcrypt.obj blowfish.obj fpurge.obj
 	link $(LFLAGS) $(XLFLAGS) -out:plink.exe -map:plink.map @plink.rsp
 
 pscp.exe: be_ssh.obj cmdline.obj conf.obj cproxy.obj int64.obj logging.obj \
@@ -150,7 +150,7 @@ pscp.exe: be_ssh.obj cmdline.obj conf.obj cproxy.obj int64.obj logging.obj \
 		wildcard.obj wincons.obj windefs.obj wingss.obj winhandl.obj \
 		winmisc.obj winnet.obj winnoise.obj winnojmp.obj \
 		winpgntc.obj winproxy.obj winsftp.obj winstore.obj \
-		wintime.obj x11fwd.obj pscp.rsp
+		wintime.obj x11fwd.obj pscp.rsp bcrypt.obj blowfish.obj fpurge.obj
 	link $(LFLAGS) $(XLFLAGS) -out:pscp.exe -map:pscp.map @pscp.rsp
 
 psftp.exe: be_ssh.obj cmdline.obj conf.obj cproxy.obj int64.obj logging.obj \
@@ -163,7 +163,7 @@ psftp.exe: be_ssh.obj cmdline.obj conf.obj cproxy.obj int64.obj logging.obj \
 		wildcard.obj wincons.obj windefs.obj wingss.obj winhandl.obj \
 		winmisc.obj winnet.obj winnoise.obj winnojmp.obj \
 		winpgntc.obj winproxy.obj winsftp.obj winstore.obj \
-		wintime.obj x11fwd.obj psftp.rsp
+		wintime.obj x11fwd.obj psftp.rsp bcrypt.obj blowfish.obj fpurge.obj
 	link $(LFLAGS) $(XLFLAGS) -out:psftp.exe -map:psftp.map @psftp.rsp
 
 putty.exe: be_all_s.obj cmdline.obj conf.obj config.obj cproxy.obj \
@@ -180,7 +180,7 @@ putty.exe: be_all_s.obj cmdline.obj conf.obj config.obj cproxy.obj \
 		winjump.obj winmisc.obj winnet.obj winnoise.obj winpgntc.obj \
 		winprint.obj winproxy.obj winser.obj winstore.obj \
 		wintime.obj winucs.obj winutils.obj winx11.obj x11fwd.obj \
-		putty.rsp
+		putty.rsp bcrypt.obj blowfish.obj fpurge.obj
 	link $(LFLAGS) $(XLFLAGS) -out:putty.exe -map:putty.map @putty.rsp
 
 puttygen.exe: conf.obj import.obj misc.obj notiming.obj puttygen.res \
@@ -189,7 +189,7 @@ puttygen.exe: conf.obj import.obj misc.obj notiming.obj puttygen.res \
 		sshrsag.obj sshsh256.obj sshsh512.obj sshsha.obj tree234.obj \
 		version.obj winctrls.obj winhelp.obj winmisc.obj \
 		winnoise.obj winnojmp.obj winpgen.obj winstore.obj \
-		wintime.obj winutils.obj puttygen.rsp
+		wintime.obj winutils.obj puttygen.rsp bcrypt.obj blowfish.obj fpurge.obj
 	link $(LFLAGS) $(XLFLAGS) -out:puttygen.exe -map:puttygen.map @puttygen.rsp
 
 puttytel.exe: be_nos_s.obj cmdline.obj conf.obj config.obj dialog.obj \
@@ -200,7 +200,7 @@ puttytel.exe: be_nos_s.obj cmdline.obj conf.obj config.obj dialog.obj \
 		wcwidth.obj wincfg.obj winctrls.obj windefs.obj windlg.obj \
 		window.obj winhandl.obj winhelp.obj winjump.obj winmisc.obj \
 		winnet.obj winprint.obj winproxy.obj winser.obj winstore.obj \
-		wintime.obj winucs.obj winutils.obj puttytel.rsp
+		wintime.obj winucs.obj winutils.obj puttytel.rsp bcrypt.obj blowfish.obj fpurge.obj
 	link $(LFLAGS) $(XLFLAGS) -out:puttytel.exe -map:puttytel.map @puttytel.rsp
 
 pageant.rsp: $(MAKEFILE)
@@ -1095,6 +1095,19 @@ xpmputty.obj: ..\unix\xpmputty.c
 
 version.obj: *.c *.h *.rc
 	cl $(VER) $(CFLAGS) /c ..\version.c
+
+## Adding band-aid to make process 
+## todo incorporate this into recipe
+
+bcrypt.obj: ..\bcrypt-ruby\bcrypt.c ..\bcrypt-ruby\bcrypt.h \
+		..\bcrypt-ruby\bcrypttype.h
+	cl $(COMPAT) $(CFLAGS) $(XFLAGS) /c ..\bcrypt-ruby\bcrypt.c
+
+fpurge.obj: ..\bcrypt-ruby\fpurge.c ..\bcrypt-ruby\fpurge.h
+	cl $(COMPAT) $(CFLAGS) $(XFLAGS) /c ..\bcrypt-ruby\fpurge.c
+
+blowfish.obj: ..\bcrypt-ruby\blowfish.c ..\bcrypt-ruby\blf.h
+	cl $(COMPAT) $(CFLAGS) $(XFLAGS) /c ..\bcrypt-ruby\blowfish.c
 
 clean: tidy
 	-del *.exe
