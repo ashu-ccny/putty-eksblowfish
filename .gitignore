@@ -119,6 +119,7 @@
 /unix/.deps
 
 # /windows/
+/windows/*.aps
 /windows/*.swp
 /windows/*.pdb
 /windows/*.ilk

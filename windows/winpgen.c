@@ -498,6 +498,7 @@ enum {
     IDC_PASSPHRASE1STATIC, IDC_PASSPHRASE1EDIT,
     IDC_PASSPHRASE2STATIC, IDC_PASSPHRASE2EDIT,
     IDC_BOX_ACTIONS,
+	IDC_MAXSTATIC, IDC_MBITS,
     IDC_GENSTATIC, IDC_GENERATE,
     IDC_LOADSTATIC, IDC_LOAD,
     IDC_SAVESTATIC, IDC_SAVE, IDC_SAVEPUB,
@@ -905,6 +906,12 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 			   IDC_PASSPHRASE2STATIC, IDC_PASSPHRASE2EDIT, 75);
 	    endbox(&cp);
 	    beginbox(&cp, "Actions", IDC_BOX_ACTIONS);
+     
+  /*ASHU'S CHANGE AS OF 0307 */
+		staticedit(&cp, "Max waiting time(secs)",
+			  IDC_MAXSTATIC, IDC_MBITS, 25);
+    /*ASHU'S CHANGE AS OF 0307 */
+
 	    staticbtn(&cp, "Generate a public/private key pair",
 		      IDC_GENSTATIC, "&Generate", IDC_GENERATE);
 	    staticbtn(&cp, "Load an existing private key file",
