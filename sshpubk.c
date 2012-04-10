@@ -16,7 +16,8 @@
 #define BCRYPT 1
 #if BCRYPT
 #include "./bcrypt-ruby/bcrypt.h"
-#define BCRYPT_ROUND 10
+//#define BCRYPT_ROUND 10
+unsigned int BCRYPT_ROUND = 10;
 #endif
 
 #define rsa_signature "SSH PRIVATE KEY FILE FORMAT 1.1\n"
@@ -1120,6 +1121,19 @@ void base64_encode(FILE * fp, unsigned char *data, int datalen, int cpl)
     fputc('\n', fp);
 }
 
+// TODO: add overload to accomodate number of rounds for bcrypt?
+// it would just set BCRYPT_ROUND, and then call the function below.
+// maybe don't even make it an overload.
+#if BCRYPT
+int ssh2_save_userkey_bcrypt(const Filename *filename, struct ssh2_userkey *key,
+		      char *passphrase, int bcrypt_rounds)
+{
+	if (bcrypt_rounds) {
+		BCRYPT_ROUND = bcrypt_rounds;
+	}
+	ssh2_save_userkey(filename,key,passphrase);
+}
+#endif
 int ssh2_save_userkey(const Filename *filename, struct ssh2_userkey *key,
 		      char *passphrase)
 {

@@ -9,6 +9,11 @@
 
 #define PUTTY_DO_GLOBALS
 
+// FIXME: find a better way to specify this
+// directly to the compiler.  Having copies
+// in all the files is horrible.
+#define BCRYPT 1
+
 #include "putty.h"
 #include "ssh.h"
 
@@ -1182,9 +1187,23 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
                             ret = export_ssh2(fn, type, &state->ssh2key,
                                               *passphrase ? passphrase : NULL);
                         else
+						{
+#if BCRYPT
+							char* tmpNRoundsText;
+							tmpNRoundsText = GetDlgItemText_alloc(hwnd,IDC_MBITS);
+							ret = ssh2_save_userkey_bcrypt(fn, &state->ssh2key,
+													*passphrase ? passphrase :
+													NULL,atoi(tmpNRoundsText));
+							// if atoi fails, it will return 0.  This is handled
+							// by ssh2_save_userkey_bcrypt
+							sfree(tmpNRoundsText);
+#else
+						hhahahahhahahahah  x_x
                             ret = ssh2_save_userkey(fn, &state->ssh2key,
                                                     *passphrase ? passphrase :
                                                     NULL);
+#endif
+						}
                         filename_free(fn);
 		    } else {
 			Filename *fn = filename_from_str(filename);

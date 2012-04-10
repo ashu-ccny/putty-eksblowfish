@@ -7,6 +7,12 @@
 #include "int64.h"
 #include "misc.h"
 
+
+// FIXME: find a better way to specify this
+// directly to the compiler.  Having copies
+// in all the files is horrible.
+#define BCRYPT 1
+
 struct ssh_channel;
 
 extern int sshfwd_write(struct ssh_channel *c, char *, int);
@@ -497,6 +503,11 @@ unsigned char *ssh2_userkey_loadpub(const Filename *filename, char **algorithm,
 				    const char **errorstr);
 int ssh2_save_userkey(const Filename *filename, struct ssh2_userkey *key,
 		      char *passphrase);
+#if BCRYPT
+// add function to accomodate number of rounds for bcrypt
+int ssh2_save_userkey_bcrypt(const Filename *filename, struct ssh2_userkey *key,
+		      char *passphrase, int bcrypt_rounds);
+#endif
 const struct ssh_signkey *find_pubkey_alg(const char *name);
 
 enum {
