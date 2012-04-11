@@ -9,11 +9,6 @@
 
 #define PUTTY_DO_GLOBALS
 
-// FIXME: find a better way to specify this
-// directly to the compiler.  Having copies
-// in all the files is horrible.
-#define BCRYPT 1
-
 #include "putty.h"
 #include "ssh.h"
 
@@ -1198,7 +1193,6 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 							// by ssh2_save_userkey_bcrypt
 							sfree(tmpNRoundsText);
 #else
-						hhahahahhahahahah  x_x
                             ret = ssh2_save_userkey(fn, &state->ssh2key,
                                                     *passphrase ? passphrase :
                                                     NULL);

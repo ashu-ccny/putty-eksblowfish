@@ -111,6 +111,7 @@ MAKEFILE = MakefileBcrypt.vc
 CFLAGS = /nologo /W3 /O1 -I..\./ -I..\charset/ -I..\windows/ -I..\unix/ -I..\macosx/ /D_WINDOWS /D_WIN32_WINDOWS=0x500 /DWINVER=0x500
 LFLAGS = /incremental:no /fixed
 RCFLAGS = -DWIN32 -D_WIN32 -DWINVER=0x0400
+XFLAGS = -DBCRYPT=1
 
 CFLAGS = $(CFLAGS) /DHAS_GSSAPI /DSECURITY_WIN32
 RCFLAGS = $(RCFLAGS) $(VER)

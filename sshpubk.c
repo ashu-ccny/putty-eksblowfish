@@ -13,10 +13,8 @@
 #include "ssh.h"
 #include "misc.h"
 
-#define BCRYPT 1
 #if BCRYPT
 #include "./bcrypt-ruby/bcrypt.h"
-//#define BCRYPT_ROUND 10
 unsigned int BCRYPT_ROUND = 10;
 #endif
 

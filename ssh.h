@@ -7,12 +7,6 @@
 #include "int64.h"
 #include "misc.h"
 
-
-// FIXME: find a better way to specify this
-// directly to the compiler.  Having copies
-// in all the files is horrible.
-#define BCRYPT 1
-
 struct ssh_channel;
 
 extern int sshfwd_write(struct ssh_channel *c, char *, int);
